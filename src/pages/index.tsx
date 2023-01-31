@@ -1,11 +1,27 @@
-import Head from 'next/head'
-import Image from 'next/image'
-import { Inter } from '@next/font/google'
-import styles from '@/styles/Home.module.css'
+import Head from "next/head";
+import styles from "@/styles/Home.module.css";
+import type { GoogleSheetResponse } from "@/types/google";
+import { DateTime } from "luxon";
+import { ResponsiveTimeRange } from "@nivo/calendar";
 
-const inter = Inter({ subsets: ['latin'] })
-
-export default function Home() {
+export default function Home({
+  names,
+  checkins,
+  days,
+}: {
+  names: string[];
+  checkins: boolean[][];
+  days: string[];
+}) {
+  const calendarData = checkins.reduce((data, checkins, i) => {
+    return [
+      ...data,
+      {
+        day: days[i],
+        value: checkins.filter((x) => x).length,
+      },
+    ];
+  }, [] as { day: string; value: number }[]);
   return (
     <>
       <Head>
@@ -15,109 +31,53 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main className={styles.main}>
-        <div className={styles.description}>
-          <p>
-            Get started by editing&nbsp;
-            <code className={styles.code}>src/pages/index.tsx</code>
-          </p>
-          <div>
-            <a
-              href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              By{' '}
-              <Image
-                src="/vercel.svg"
-                alt="Vercel Logo"
-                className={styles.vercelLogo}
-                width={100}
-                height={24}
-                priority
-              />
-            </a>
-          </div>
-        </div>
-
-        <div className={styles.center}>
-          <Image
-            className={styles.logo}
-            src="/next.svg"
-            alt="Next.js Logo"
-            width={180}
-            height={37}
-            priority
+        <div className={styles.calendar}>
+          <ResponsiveTimeRange
+            data={calendarData}
+            from={days[0]}
+            to={days[days.length - 1]}
+            emptyColor="#eeeeee"
+            colors={["#61cdbb", "#97e3d5", "#e8c1a0", "#f47560"]}
+            margin={{ top: 40, right: 40, bottom: 40, left: 40 }}
+            dayBorderWidth={2}
+            dayBorderColor="#ffffff"
           />
-          <div className={styles.thirteen}>
-            <Image
-              src="/thirteen.svg"
-              alt="13"
-              width={40}
-              height={31}
-              priority
-            />
-          </div>
-        </div>
-
-        <div className={styles.grid}>
-          <a
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Docs <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Find in-depth information about Next.js features and&nbsp;API.
-            </p>
-          </a>
-
-          <a
-            href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Learn <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Learn about Next.js in an interactive course with&nbsp;quizzes!
-            </p>
-          </a>
-
-          <a
-            href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Templates <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Discover and deploy boilerplate example Next.js&nbsp;projects.
-            </p>
-          </a>
-
-          <a
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Deploy <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Instantly deploy your Next.js site to a shareable URL
-              with&nbsp;Vercel.
-            </p>
-          </a>
         </div>
       </main>
     </>
-  )
+  );
+}
+
+const id = "1k-tnKWWB3q6XCF2ofav-yT_CGprIFMBTf9OPhvR8hlM";
+async function getSheetData<T>(
+  start: string,
+  end: string,
+  dimension: "COLUMNS" | "ROWS"
+): Promise<GoogleSheetResponse<T>> {
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${id}/values/Sheet1!${start}:${end}?majorDimension=${dimension}&key=${process.env.GOOGLE_API_KEY}`;
+  return fetch(url).then((res) => res.json());
+}
+
+export async function getServerSideProps() {
+  const firstDay = DateTime.local(2022, 11, 28);
+  const now = DateTime.now();
+  const length = Math.ceil(now.diff(firstDay, "days").days);
+  console.log(length);
+  const days = new Array(length)
+    .fill(undefined)
+    .map((_, i) => firstDay.plus({ days: i }).toFormat("yyyy-MM-dd"));
+  const [namesData, checkinData] = await Promise.all([
+    getSheetData<string>("B5", "B15", "COLUMNS"),
+    getSheetData<"TRUE" | "FALSE">("C5", "DX15", "COLUMNS"),
+  ]);
+  const checkins = checkinData?.values?.map((day) =>
+    day.map((checkin) => checkin === "TRUE")
+  );
+  return {
+    props: {
+      names: namesData?.values?.[0],
+      checkins: checkins.slice(0, length),
+      days,
+    },
+  };
 }
