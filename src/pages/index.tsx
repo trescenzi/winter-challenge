@@ -3,6 +3,7 @@ import styles from "@/styles/Home.module.css";
 import type { GoogleSheetResponse } from "@/types/google";
 import { DateTime } from "luxon";
 import { ResponsiveTimeRange } from "@nivo/calendar";
+import { checkCustomRoutes } from "next/dist/lib/load-custom-routes";
 
 export default function Home({
   names,
@@ -37,10 +38,40 @@ export default function Home({
             from={days[0]}
             to={days[days.length - 1]}
             emptyColor="#eeeeee"
-            colors={["#61cdbb", "#97e3d5", "#e8c1a0", "#f47560"]}
-            margin={{ top: 40, right: 40, bottom: 40, left: 40 }}
-            dayBorderWidth={2}
+            colors={["#e0d39a", "#8bad83", "#458376", "#185662", "#0f2b3f"]}
+            dayRadius={8}
+            dayBorderWidth={4}
             dayBorderColor="#ffffff"
+            tooltip={({ day }) => {
+              const i = calendarData.findIndex(({ day: cDay }) => cDay === day);
+              const checkedIn = checkins[i].reduce(
+                (acc, checkedIn, i) => (checkedIn ? [...acc, names[i]] : acc),
+                [] as string[]
+              );
+              return (
+                <div className={styles.tooltip}>
+                  <ul>
+                    {checkedIn.map((name) => (
+                      <li>{name}</li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            }}
+            weekdayTicks={[1, 2, 3, 4, 5, 6, 0]}
+            legends={[
+              {
+                anchor: "bottom-right",
+                direction: "row",
+                justify: false,
+                itemCount: 5,
+                itemWidth: 42,
+                itemHeight: 36,
+                itemsSpacing: 14,
+                itemDirection: "right-to-left",
+                symbolSize: 20,
+              },
+            ]}
           />
         </div>
       </main>

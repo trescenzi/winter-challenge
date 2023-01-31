@@ -1,13 +1,36 @@
 .main {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  align-items: center;
-  padding: 6rem;
   min-height: 100vh;
+  margin-top: 32px;
+  align-items: center;
+}
+
+.tooltip {
+  background-color: black;
+  border-radius: 4px;
+  padding: 8px;
+  color: white;
+}
+
+.tooltip ul {
+  padding: 0;
+  margin: 0;
+  list-style-type: none;
 }
 
 .calendar {
-  height: 250px;
-  width: 500px;
+  height: 300px;
+  width: 370px;
+}
+
+@media (min-width: 515px) {
+  .calendar {
+    height: 500px;
+    width: 500px;
+  }
+
+  .main {
+    justify-content: center;
+  }
 }
