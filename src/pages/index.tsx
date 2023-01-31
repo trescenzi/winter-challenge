@@ -1,9 +1,12 @@
+import { useState } from "react";
 import Head from "next/head";
 import styles from "@/styles/Home.module.css";
 import type { GoogleSheetResponse } from "@/types/google";
 import { DateTime } from "luxon";
 import { ResponsiveTimeRange } from "@nivo/calendar";
 
+const blues = ["#e0d39a", "#8bad83", "#458376", "#185662", "#0f2b3f"];
+const oranges = ["#e0e3ca", "#dbd19a", "#e1bb6c", "#eca044", "#fa7d29"];
 export default function Home({
   names,
   checkins,
@@ -13,6 +16,7 @@ export default function Home({
   checkins: boolean[][];
   days: string[];
 }) {
+  const [theme, setTheme] = useState(oranges);
   const calendarData = checkins.reduce((data, checkins, i) => {
     return [
       ...data,
@@ -30,15 +34,25 @@ export default function Home({
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
+      <header className={styles.header}>
+        <label className={styles.label}>
+          Theme:
+          <input
+            onChange={({ target: { checked } }) => {
+              checked ? setTheme(blues) : setTheme(oranges);
+            }}
+            type="checkbox"
+            className={styles.slider}
+          ></input>
+        </label>
+      </header>
       <main className={styles.main}>
         <div className={styles.calendar}>
           <ResponsiveTimeRange
             data={calendarData}
-            from={days[0]}
-            to={days[days.length - 1]}
-            emptyColor="#eeeeee"
-            colors={["#e0d39a", "#8bad83", "#458376", "#185662", "#0f2b3f"]}
+            colors={theme}
             dayRadius={8}
+            maxValue={names.length}
             dayBorderWidth={4}
             dayBorderColor="#ffffff"
             tooltip={({ day }) => {
@@ -62,7 +76,6 @@ export default function Home({
               {
                 anchor: "bottom-right",
                 direction: "row",
-                justify: false,
                 itemCount: 5,
                 itemWidth: 42,
                 itemHeight: 36,

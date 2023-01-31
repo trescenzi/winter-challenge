@@ -1,9 +1,10 @@
 .main {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  min-height: 100%;
   margin-top: 32px;
   align-items: center;
+  justify-content: center;
 }
 
 .tooltip {
@@ -20,17 +21,48 @@
 }
 
 .calendar {
-  height: 300px;
+  height: 250px;
   width: 370px;
 }
 
 @media (min-width: 515px) {
   .calendar {
-    height: 500px;
+    height: 350px;
     width: 500px;
   }
+}
 
-  .main {
-    justify-content: center;
-  }
+.header {
+  display: flex;
+  flex-direction: row-reverse;
+  padding: 16px 0;
+}
+.label {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.slider {
+  appearance: none;
+  width: 64px;
+  height: 32px;
+  border-radius: 32px;
+  background-color: #e0e3ca;
+  transition: 0.25s;
+}
+.slider::after {
+  background-color: #fa7d29;
+  height: 32px;
+  width: 32px;
+  display: inline-block;
+  border-radius: 50%;
+  content: "";
+  transition: 0.25s;
+}
+.slider:checked {
+  background-color: #e0d39a;
+}
+.slider:checked::after {
+  background-color: #0f2b3f;
+  transform: translateX(100%);
 }
