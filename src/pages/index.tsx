@@ -3,7 +3,6 @@ import styles from "@/styles/Home.module.css";
 import type { GoogleSheetResponse } from "@/types/google";
 import { DateTime } from "luxon";
 import { ResponsiveTimeRange } from "@nivo/calendar";
-import { checkCustomRoutes } from "next/dist/lib/load-custom-routes";
 
 export default function Home({
   names,
