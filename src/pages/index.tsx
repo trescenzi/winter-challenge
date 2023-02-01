@@ -4,6 +4,8 @@ import styles from "@/styles/Home.module.css";
 import type { GoogleSheetResponse } from "@/types/google";
 import { DateTime } from "luxon";
 import { ResponsiveTimeRange } from "@nivo/calendar";
+import { ResponsivePie } from "@nivo/pie";
+import { ResponsiveHeatMap } from "@nivo/heatmap";
 
 const blues = ["#e0d39a", "#8bad83", "#458376", "#185662", "#0f2b3f"];
 const oranges = ["#e0e3ca", "#dbd19a", "#e1bb6c", "#eca044", "#fa7d29"];
@@ -17,15 +19,45 @@ export default function Home({
   days: string[];
 }) {
   const [theme, setTheme] = useState(oranges);
-  const calendarData = checkins.reduce((data, checkins, i) => {
+  const checkinsByDay = checkins.flatMap((c) => c.filter((x) => x).length);
+  const calendarData = checkinsByDay.reduce((data, checkins, i) => {
     return [
       ...data,
       {
         day: days[i],
-        value: checkins.filter((x) => x).length,
+        value: checkins,
       },
     ];
   }, [] as { day: string; value: number }[]);
+  const weekdays = days.map((day) => DateTime.fromISO(day).toFormat("EEEE"));
+  const weekdayCheckins = weekdays.reduce(
+    (dayIndexes, day, i) => (
+      (dayIndexes[day] = dayIndexes[day] + checkinsByDay[i]), dayIndexes
+    ),
+    {
+      Monday: 0,
+      Tuesday: 0,
+      Wednesday: 0,
+      Thursday: 0,
+      Friday: 0,
+      Saturday: 0,
+      Sunday: 0,
+    } as Record<string, number>
+  );
+  const heatmapBase = Object.keys(weekdayCheckins).map((weekday) => ({
+    id: weekday,
+    data: names.map((name) => ({ x: name, y: 0 })),
+  }));
+  const heatmapData = weekdays.reduce((heatmap, weekday, i) => {
+    const day = heatmap.findIndex(({ id }) => id === weekday);
+    if (day === -1) return heatmap;
+    const checkinsToday = checkins[i];
+    heatmap[day].data = heatmap[day].data.map(({ x, y }, i) => ({
+      x: x,
+      y: y + +checkinsToday[i],
+    }));
+    return heatmap;
+  }, heatmapBase);
   return (
     <>
       <Head>
@@ -35,6 +67,7 @@ export default function Home({
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <header className={styles.header}>
+        <h1>Winter Challenge Data</h1>
         <label className={styles.label}>
           Theme:
           <input
@@ -47,45 +80,67 @@ export default function Home({
         </label>
       </header>
       <main className={styles.main}>
-        <div className={styles.calendar}>
-          <ResponsiveTimeRange
-            data={calendarData}
-            colors={theme}
-            dayRadius={8}
-            maxValue={names.length}
-            dayBorderWidth={4}
-            dayBorderColor="#ffffff"
-            tooltip={({ day }) => {
-              const i = calendarData.findIndex(({ day: cDay }) => cDay === day);
-              const checkedIn = checkins[i].reduce(
-                (acc, checkedIn, i) => (checkedIn ? [...acc, names[i]] : acc),
-                [] as string[]
-              );
-              return (
-                <div className={styles.tooltip}>
-                  <ul>
-                    {checkedIn.map((name) => (
-                      <li>{name}</li>
-                    ))}
-                  </ul>
-                </div>
-              );
-            }}
-            weekdayTicks={[1, 2, 3, 4, 5, 6, 0]}
-            legends={[
-              {
-                anchor: "bottom-right",
-                direction: "row",
-                itemCount: 5,
-                itemWidth: 42,
-                itemHeight: 36,
-                itemsSpacing: 14,
-                itemDirection: "right-to-left",
-                symbolSize: 20,
-              },
-            ]}
-          />
-        </div>
+        <section>
+          <h2>Checkins so far</h2>
+          <figure className={styles.calendar}>
+            <ResponsiveTimeRange
+              data={calendarData}
+              colors={theme}
+              dayRadius={8}
+              maxValue={names.length}
+              dayBorderWidth={4}
+              dayBorderColor="#ffffff"
+              tooltip={({ day }) => {
+                const i = calendarData.findIndex(
+                  ({ day: cDay }) => cDay === day
+                );
+                const checkedIn = checkins[i].reduce(
+                  (acc, checkedIn, i) => (checkedIn ? [...acc, names[i]] : acc),
+                  [] as string[]
+                );
+                return (
+                  <div className={styles.tooltip}>
+                    <ul>
+                      {checkedIn.map((name) => (
+                        <li>{name}</li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              }}
+              weekdayTicks={[1, 2, 3, 4, 5, 6, 0]}
+            />
+          </figure>
+        </section>
+        <section>
+          <h2>Checkins by Day</h2>
+          <figure className={styles.pie}>
+            <ResponsivePie
+              data={Object.entries(weekdayCheckins).map(([day, checkins]) => ({
+                id: day,
+                value: checkins,
+              }))}
+              colors={theme}
+              innerRadius={0.7}
+              padAngle={1}
+              cornerRadius={4}
+              margin={{ top: 75, bottom: 75, right: 75, left: 75 }}
+            />
+          </figure>
+        </section>
+        <section>
+          <h2>Checkins by Day per Person</h2>
+          <figure className={styles.heatmap}>
+            <ResponsiveHeatMap
+              data={heatmapData}
+              margin={{ top: 75, bottom: 75, right: 75, left: 75 }}
+              colors={{
+                type: "quantize",
+                scheme: theme[0] === oranges[0] ? "orange_red" : "yellow_green",
+              }}
+            />
+          </figure>
+        </section>
       </main>
     </>
   );
