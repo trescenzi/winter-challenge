@@ -6,9 +6,23 @@ import { DateTime } from "luxon";
 import { ResponsiveTimeRange } from "@nivo/calendar";
 import { ResponsivePie } from "@nivo/pie";
 import { ResponsiveHeatMap } from "@nivo/heatmap";
+import { schemePurples, schemeOranges } from "d3-scale-chromatic";
+import { scaleOrdinal } from "d3-scale";
+import contrastChecker from "wcag-color-contrast-checker";
 
-const blues = ["#e0d39a", "#8bad83", "#458376", "#185662", "#0f2b3f"];
-const oranges = ["#e0e3ca", "#dbd19a", "#e1bb6c", "#eca044", "#fa7d29"];
+const oranges = scaleOrdinal(schemeOranges[7]).range();
+const purples = scaleOrdinal(schemePurples[7]).range();
+function labelWithContrast(color: string) {
+  const match = color.match(/rgb\((\d+), (\d+), (\d+)\)/);
+  if (!match) return "black";
+  const [_, r, g, b] = match;
+  return contrastChecker.checkContrast(
+    { r: parseInt(r), g: parseInt(g), b: parseInt(b) },
+    { r: 0, g: 0, b: 0 }
+  )
+    ? "black"
+    : "white";
+}
 export default function Home({
   names,
   checkins,
@@ -18,7 +32,7 @@ export default function Home({
   checkins: boolean[][];
   days: string[];
 }) {
-  const [theme, setTheme] = useState(oranges);
+  const [theme, setTheme] = useState<"oranges" | "purples">("oranges");
   const checkinsByDay = checkins.flatMap((c) => c.filter((x) => x).length);
   const calendarData = checkinsByDay.reduce((data, checkins, i) => {
     return [
@@ -72,7 +86,7 @@ export default function Home({
           Theme:
           <input
             onChange={({ target: { checked } }) => {
-              checked ? setTheme(blues) : setTheme(oranges);
+              checked ? setTheme("purples") : setTheme("oranges");
             }}
             type="checkbox"
             className={styles.slider}
@@ -85,7 +99,7 @@ export default function Home({
           <figure className={styles.calendar}>
             <ResponsiveTimeRange
               data={calendarData}
-              colors={theme}
+              colors={theme === "oranges" ? oranges : purples}
               dayRadius={8}
               maxValue={names.length}
               dayBorderWidth={4}
@@ -120,11 +134,12 @@ export default function Home({
                 id: day,
                 value: checkins,
               }))}
-              colors={theme}
+              colors={{ scheme: theme }}
               innerRadius={0.7}
               padAngle={1}
               cornerRadius={4}
               margin={{ top: 75, bottom: 75, right: 75, left: 75 }}
+              arcLabelsTextColor={(x) => labelWithContrast(x.color)}
             />
           </figure>
         </section>
@@ -135,9 +150,10 @@ export default function Home({
               data={heatmapData}
               margin={{ top: 75, bottom: 75, right: 75, left: 75 }}
               colors={{
-                type: "quantize",
-                scheme: theme[0] === oranges[0] ? "orange_red" : "yellow_green",
+                type: "sequential",
+                scheme: theme,
               }}
+              labelTextColor={(x) => labelWithContrast(x.color)}
             />
           </figure>
         </section>
