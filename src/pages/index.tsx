@@ -15,6 +15,9 @@ const purples = scaleOrdinal(schemePurples[7]).range();
 const darkMode =
   typeof window !== "undefined" &&
   window.matchMedia("(prefers-color-scheme: dark)").matches;
+const mobile =
+  typeof window !== "undefined" &&
+  window.matchMedia("(max-width: 500px)").matches;
 const backgroundColor = darkMode ? "black" : "white";
 const contrastColor = darkMode ? "white" : "black";
 const chartTheme = {
@@ -158,7 +161,7 @@ export default function Home({
               }))}
               theme={chartTheme}
               colors={{ scheme: theme }}
-              innerRadius={0.5}
+              innerRadius={!mobile ? 0.5 : 0.25}
               padAngle={1}
               cornerRadius={4}
               margin={{ top: 75, bottom: 75, right: 75, left: 75 }}
@@ -172,6 +175,9 @@ export default function Home({
             <ResponsiveHeatMap
               data={heatmapData}
               margin={{ top: 75, bottom: 75, right: 75, left: 75 }}
+              axisTop={{
+                tickRotation: mobile ? 25 : 90,
+              }}
               colors={{
                 type: "sequential",
                 scheme: theme,
