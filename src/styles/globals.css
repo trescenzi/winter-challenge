@@ -1,5 +1,37 @@
 @import url("https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400;600&display=swap");
 
+/*resets*/
+html {
+  box-sizing: border-box;
+  font-size: 16px;
+}
+
+*,
+*:before,
+*:after {
+  box-sizing: inherit;
+}
+
+body,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+ol,
+ul,
+figure,
+section {
+  margin: 0;
+  padding: 0;
+}
+
+section {
+  max-width: 100%;
+}
+
 body {
   font-family: "Source Sans Pro", sans-serif;
 }
@@ -11,4 +43,11 @@ h4,
 h5,
 h6 {
   font-weight: bold;
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background: black;
+    color: white;
+  }
 }

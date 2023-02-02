@@ -12,12 +12,33 @@ import contrastChecker from "wcag-color-contrast-checker";
 
 const oranges = scaleOrdinal(schemeOranges[7]).range();
 const purples = scaleOrdinal(schemePurples[7]).range();
+const darkMode =
+  typeof window !== "undefined" &&
+  window.matchMedia("(prefers-color-scheme: dark)").matches;
+const backgroundColor = darkMode ? "black" : "white";
+const contrastColor = darkMode ? "white" : "black";
+const chartTheme = {
+  textColor: contrastColor,
+  tooltip: {
+    container: {
+      backgroundColor: backgroundColor,
+      color: contrastColor,
+    },
+  },
+};
 function labelWithContrast(color: string) {
-  const match = color.match(/rgb\((\d+), (\d+), (\d+)\)/);
-  if (!match) return "black";
+  let match = color.match(/rgb\((\d+), (\d+), (\d+)\)/);
+  let base = 10;
+  if (!match) {
+    match = color.match(/\#(\w\w)(\w\w)(\w\w)/);
+    base = 16;
+  }
+
+  if (!match) return contrastColor;
+
   const [_, r, g, b] = match;
   return contrastChecker.checkContrast(
-    { r: parseInt(r), g: parseInt(g), b: parseInt(b) },
+    { r: parseInt(r, base), g: parseInt(g, base), b: parseInt(b, base) },
     { r: 0, g: 0, b: 0 }
   )
     ? "black"
@@ -103,7 +124,8 @@ export default function Home({
               dayRadius={8}
               maxValue={names.length}
               dayBorderWidth={4}
-              dayBorderColor="#ffffff"
+              dayBorderColor={backgroundColor}
+              theme={chartTheme}
               tooltip={({ day }) => {
                 const i = calendarData.findIndex(
                   ({ day: cDay }) => cDay === day
@@ -134,8 +156,9 @@ export default function Home({
                 id: day,
                 value: checkins,
               }))}
+              theme={chartTheme}
               colors={{ scheme: theme }}
-              innerRadius={0.7}
+              innerRadius={0.5}
               padAngle={1}
               cornerRadius={4}
               margin={{ top: 75, bottom: 75, right: 75, left: 75 }}
@@ -153,6 +176,7 @@ export default function Home({
                 type: "sequential",
                 scheme: theme,
               }}
+              theme={chartTheme}
               labelTextColor={(x) => labelWithContrast(x.color)}
             />
           </figure>
